@@ -126,37 +126,41 @@ IVR signal handling
 referral systems
 
 Database
-Azure Cosmos DB acts as the primary behavioral data storage system.
-Collections include:
+MongoDB Atlas acts as the primary behavioral data storage system.
+Collections (Mongoose Models) include:
 users
 checkins
 health_aggregates
 ivr_signals
 visits
 distress_flags
-Cosmos DB was chosen because it supports flexible NoSQL structures suitable for rapidly evolving behavioral and healthcare data.
+MongoDB was chosen to bypass Azure Cosmos DB region restrictions while maintaining a flexible NoSQL structure suitable for rapidly evolving behavioral data.
 
-Azure AI Infrastructure
-Azure Anomaly Detector
-This service analyzes time-series behavioral patterns such as sleep decline, exhaustion increase, reduced activity, and worsening behavioral signals. It generates anomaly scores representing behavioral deterioration severity.
-Azure OpenAI
-Used in a restricted and controlled manner for:
+AI & Communication Infrastructure
+*Note: Due to Azure Student subscription region/quota limits, some services have been replaced or mocked to prevent hackathon bottlenecks, while preserving the overall architectural design.*
+
+Azure Anomaly Detector (Currently Mocked)
+This service analyzes time-series behavioral patterns such as sleep decline, exhaustion increase, and worsening behavioral signals. Due to deployment constraints, the anomaly score is temporarily mocked (e.g. `anomalyScore = 0.82`) until the real detection API can be integrated later.
+
+Standard OpenAI API & Gemini 2.5 Flash
+Replaces Azure OpenAI deployments. Used in a restricted and controlled manner for:
 crisis phrase detection
 GP support note generation
-escalation reasoning
+conversational check-ins over IVR (powered by Gemini)
 The system intentionally avoids therapy-style conversational AI.
+
 Azure Speech Services
 Used for:
 speech-to-text conversion
 speech pace analysis
 pause density extraction
 vocal fatigue indicators
-Azure Communication Services
-Used for:
-IVR phone system
-call routing
+
+Twilio Voice Webhooks
+Replaces Azure Communication Services for the hackathon. Used for:
+IVR phone system via Gemini REST API
+call routing and session tracking
 referral SMS delivery
-escalation communication
 
 Final Team Responsibilities
 Product & Coordination Lead
@@ -176,17 +180,18 @@ CalmWave interfaces
 GP interfaces
 check-in systems
 Firebase authentication
-Backend & Azure Team
+Backend & Infrastructure Team
 Responsible for:
 Node.js APIs
-Azure integration
-Cosmos DB
-anomaly detection
+MongoDB Atlas integration
+Azure/Gemini AI integrations
+anomaly detection (mock logic for now)
 escalation logic
 GP backend systems
 Voice & Accessibility Team
 Responsible for:
-IVR infrastructure
+Twilio IVR infrastructure
+Gemini Voice integration
 Azure Speech integration
 voice analysis pipeline
 SMS escalation workflows
