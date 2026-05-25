@@ -6,6 +6,7 @@ const User = require('../models/User');
 const IVRSignal = require('../models/IVRSignal');
 const CheckIn = require('../models/CheckIn');
 const HealthAggregate = require('../models/HealthAggregate');
+const twilioService = require('../services/twilioService');
 
 const SESSION_TTL_MS = 30 * 60 * 1000;
 const MAX_SESSION_MESSAGES = 12;
@@ -144,12 +145,18 @@ const handleVoiceSpeech = async (req, res) => {
   try {
     const history = session ? session.messages.slice() : [];
     
-    // Process Gemini reply and Sentiment Analysis concurrently
-    const [reply, sentimentResult] = await Promise.all([
+    // Process Gemini reply and Behavioral Data Extraction concurrently
+    const [reply, behavioralData] = await Promise.all([
       openaiService.generateReply(speechText, history),
-      openaiService.analyzeSentiment(speechText).catch(err => {
-        console.error('Sentiment analysis failed:', err.message);
-        return { score: 0.5 }; // fallback
+      openaiService.analyzeBehavioralData(speechText).catch(err => {
+        console.error('Behavioral extraction failed:', err.message);
+        return { 
+          sentimentScore: 0.5, 
+          distressFlag: false, 
+          behavioralIndicators: [], 
+          crisisPhrases: [], 
+          gpSummaryNote: "Extraction failed due to an error." 
+        };
       })
     ]);
 
@@ -168,9 +175,17 @@ const handleVoiceSpeech = async (req, res) => {
             pace: 'normal',
             vocalFatigue: false,
           },
-          transcriptSentiment: sentimentResult.score,
-        }).then(() => console.log('[DB] Saved IVRSignal'))
-          .catch(err => console.error('[DB] Failed to save IVRSignal:', err.message));
+          transcriptSentiment: behavioralData.sentimentScore,
+          distressFlag: behavioralData.distressFlag,
+          behavioralIndicators: behavioralData.behavioralIndicators,
+          crisisPhrases: behavioralData.crisisPhrases,
+          gpSummaryNote: behavioralData.gpSummaryNote
+        }).then(() => {
+          console.log('[DB] Saved IVRSignal with advanced behavioral intelligence');
+          if (behavioralData.distressFlag) {
+            twilioService.sendEmergencyAlert(session.userId, behavioralData.gpSummaryNote);
+          }
+        }).catch(err => console.error('[DB] Failed to save IVRSignal:', err.message));
       }
     } else if (!callSid) {
       console.warn('Voice webhook missing CallSid; continuing without session history.');
@@ -241,14 +256,14 @@ router.post('/checkins', async (req, res) => {
     // Simple sentiment analysis for the check-in text if provided
     if (responses && responses.textNotes) {
       // Async background task to analyze sentiment and update health aggregate
-      openaiService.analyzeSentiment(responses.textNotes).then(async (sentiment) => {
+      openaiService.analyzeBehavioralData(responses.textNotes).then(async (behavioralData) => {
         await HealthAggregate.create({
           userId,
           checkInId: checkIn._id,
-          anomalyScore: sentiment.score < 0.3 ? 0.8 : 0.1, // Mock anomaly logic
-          distressFlag: sentiment.score < 0.2,
+          anomalyScore: behavioralData.sentimentScore < 0.3 ? 0.8 : 0.1, // Mock anomaly logic
+          distressFlag: behavioralData.distressFlag,
         });
-      }).catch(err => console.error('Sentiment failed:', err));
+      }).catch(err => console.error('Behavioral extraction failed:', err));
     }
 
     res.json({ success: true, checkIn });

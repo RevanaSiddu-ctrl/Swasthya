@@ -8,7 +8,11 @@ const IVRSignalSchema = new mongoose.Schema({
     pace: { type: String, enum: ['normal', 'slow', 'fast'] },
     vocalFatigue: { type: Boolean },
   },
-  transcriptSentiment: { type: Number }, // from Azure OpenAI
+  transcriptSentiment: { type: Number }, // 0 to 1
+  distressFlag: { type: Boolean, default: false },
+  behavioralIndicators: [{ type: String }],
+  crisisPhrases: [{ type: String }],
+  gpSummaryNote: { type: String },
   timestamp: { type: Date, default: Date.now },
 });
 

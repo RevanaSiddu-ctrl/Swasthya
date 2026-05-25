@@ -42,6 +42,12 @@ const env = {
     key: process.env.AZURE_ANOMALY_KEY,
   },
   clientUrl: process.env.CLIENT_URL,
+  twilio: {
+    accountSid: process.env.TWILIO_ACCOUNT_SID,
+    authToken: process.env.TWILIO_AUTH_TOKEN,
+    phoneNumber: process.env.TWILIO_PHONE_NUMBER,
+    ashaWorkerPhone: process.env.ASHA_WORKER_PHONE,
+  },
 };
 
 module.exports = { env };

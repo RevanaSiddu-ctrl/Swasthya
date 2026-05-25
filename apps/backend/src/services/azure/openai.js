@@ -102,28 +102,47 @@ class GeminiService {
     });
   }
 
-  async analyzeSentiment(text) {
+  async analyzeBehavioralData(text) {
+    const prompt = `
+You are a clinical behavioral analyst. Analyze the following user transcript and extract behavioral intelligence.
+Return ONLY a raw JSON object with the following exact structure, no markdown formatting:
+{
+  "sentimentScore": <Number between 0 and 1, where 0 is severe distress/negative and 1 is highly positive/stable>,
+  "distressFlag": <Boolean, true ONLY if there are signs of self-harm, extreme burnout, or crisis>,
+  "behavioralIndicators": [<Array of strings, e.g., "exhaustion", "isolation", "anxiety", "sleep deprivation", "overwhelm">],
+  "crisisPhrases": [<Array of strings, containing EXACT concerning quotes from the transcript, if any>],
+  "gpSummaryNote": "<A single concise, professional sentence summarizing the user's emotional state for a doctor>"
+}
+
+Transcript: "${text}"
+`;
+
     const contents = [{
       role: 'user',
-      parts: [{ text: 'Classify the sentiment of the following text as positive, neutral, or negative. Return JSON only: {"sentiment": "...", "score": 0-1} where 0 is extremely negative and 1 is extremely positive.\n\nText: ' + text }]
+      parts: [{ text: prompt }]
     }];
 
     const content = await this.requestCompletion(contents, {
       temperature: 0,
-      maxTokens: 60,
+      maxTokens: 250,
       responseMimeType: 'application/json'
     });
 
     try {
-      // Sometimes Gemini outputs "Here is the JSON: {...}" even with responseMimeType
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         return JSON.parse(jsonMatch[0]);
       }
       return JSON.parse(content);
     } catch (e) {
-      console.error('Failed to parse sentiment JSON:', content);
-      return { sentiment: 'neutral', score: 0.5 };
+      console.error('Failed to parse behavioral JSON:', content);
+      return { 
+        sentimentScore: 0.5, 
+        distressFlag: false, 
+        behavioralIndicators: [], 
+        crisisPhrases: [], 
+        gpSummaryNote: "Could not extract behavioral data." 
+      };
     }
   }
 }
