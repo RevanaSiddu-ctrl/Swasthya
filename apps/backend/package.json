@@ -8,13 +8,14 @@
     "start": "node src/index.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
+    "@azure/cosmos": "^4.0.0",
+    "axios": "^1.7.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "axios": "^1.7.2",
+    "express": "^4.19.2",
     "firebase-admin": "^12.1.0",
-    "@azure/cosmos": "^4.0.0",
-    "shared-types": "workspace:*"
+    "mongoose": "^9.6.2",
+    "twilio": "^4.10.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
